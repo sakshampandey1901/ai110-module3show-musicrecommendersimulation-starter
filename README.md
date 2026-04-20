@@ -201,6 +201,20 @@ Profile: Edge case: upbeat genre + melancholic mood + high energy
 
 **Weight experiment:** `RECOMMENDER_EXPERIMENT=1 python3 -m src.main` — same profiles; genre matches show `+1.0` and energy terms roughly double, so rankings shift toward energy proximity when genre is weaker.
 
+## Screenshots (add your terminal captures)
+
+Save your screenshots in `screenshots/` using these names, then they will render below:
+
+- `screenshots/high-energy-pop.png`
+- `screenshots/chill-lofi.png`
+- `screenshots/deep-intense-rock.png`
+- `screenshots/edge-case-profile.png`
+
+![High-Energy Pop output](screenshots/high-energy-pop.png)
+![Chill Lofi output](screenshots/chill-lofi.png)
+![Deep Intense Rock output](screenshots/deep-intense-rock.png)
+![Edge Case output](screenshots/edge-case-profile.png)
+
 ---
 
 ## Getting Started
