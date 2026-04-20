@@ -17,17 +17,17 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+In real apps, recommenders blend many signals—what you played, skipped, liked, and what similar users enjoy—often learned by models we never see. This simulation is **content-based**: it only compares each song’s described attributes to a **UserProfile** you define, then ranks the catalog by a transparent score. This version prioritizes **interpretability** (you can explain *why* a song ranked high) and **vibe alignment** through genre, mood, and continuous audio-style features (energy, valence, tempo, danceability, acousticness) rather than collaborative “people like you also liked” patterns.
 
-Some prompts to answer:
+**`Song` features (from `data/songs.csv`, one row per track):** `id`, `title`, `artist`, `genre`, `mood`, `energy`, `tempo_bpm`, `valence`, `danceability`, `acousticness`.
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+**`UserProfile` fields (simulated taste):** `favorite_genre`, `favorite_mood`, `target_energy`, `likes_acoustic` — plus optional targets or tolerances you derive for tempo/valence/danceability when you implement scoring.
 
-You can include a simple diagram or bullet list if helpful.
+**Scoring vs ranking:** A **scoring rule** assigns one number per song (how well it matches the profile). A **ranking rule** orders the whole list by those scores (and tie-breaks or top‑`k` selection). You need both because the score answers “how good is this match?” while ranking answers “which songs should we show first?”
+
+**Numerical features (e.g. energy):** Prefer **closeness** to the user’s target, not “higher is better.” For example, reward \(1 - |energy_{song} - energy_{user}|\) (or a squared penalty) so a user who wants medium energy is not pushed toward max energy tracks.
+
+**Weights (genre vs mood):** Genre often acts as a **broad filter** (library of styles); mood captures **session intent** (chill vs intense). Many designs weight genre slightly higher so recommendations stay stylistically coherent, and mood to tune the feel—but your weights should reflect what you care about (e.g. mood-first for “soundtrack my study session” vs genre-first for “only indie pop”).
 
 ---
 
