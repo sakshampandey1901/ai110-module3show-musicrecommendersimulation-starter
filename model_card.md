@@ -1,53 +1,63 @@
-# 🎧 Model Card: Music Recommender Simulation
+# Model Card: Music Recommender Simulation
 
-## 1. Model Name  
+## Model Name
 
-**CatalogRank 0.1** — content-based scoring over `data/songs.csv`.
-
----
-
-## 2. Intended Use  
-
-Ranks up to five songs from a fixed classroom catalog given a small preference dict (genre, mood, target energy, acoustic taste). For exploration only; not trained on real listening data.
+**VibeFinder 1.0** — a tiny content-based song ranker for a classroom catalog.
 
 ---
 
-## 3. How the Model Works  
+## Goal / Task
 
-Each song is scored by adding points for genre match, mood match, energy closeness to the user’s target, and a binary acoustic “fit.” The catalog is sorted by total score; unused columns (valence, tempo, danceability) are not in the score. Optional **`RECOMMENDER_EXPERIMENT=1`** halves genre weight and doubles the energy multiplier to test sensitivity.
-
----
-
-## 4. Data  
-
-18 rows in `data/songs.csv`: multiple genres and moods; rock and metal are sparse (one rock track). No lyrics or audio waveforms.
+The recommender suggests which songs from a fixed list best match a user’s taste. It does not learn from listening history. It scores each song with rules, then returns the top matches.
 
 ---
 
-## 5. Strengths  
+## Data Used
 
-Transparent reasons (e.g. `genre match (+2.0)`). Different profiles (pop vs lofi vs rock) yield different #1 tracks when the catalog contains a clear genre/mood fit (e.g. Storm Runner for “Deep Intense Rock”).
-
----
-
-## 6. Limitations and Bias 
-
-Genre is worth twice as much as mood, so a user who wants a contradictory mood can still see top results dominated by genre matches (e.g. pop + melancholic edge case: Gym Hero and Sunrise City stay on top because of `pop` and high energy, not because the mood fits). The energy term is `1 − |Δenergy|`; it does not model “wrong mood” as a hard penalty. The catalog is tiny, so the same high-energy electronic or hip-hop tracks can float near the top for many profiles on energy + acoustic alone. Valence and tempo are ignored, which can hide emotionally “sad” or “slow” tracks that match a melancholic user.
+There are **18 songs** in `data/songs.csv`. Each row has a title, artist, genre, mood, and numbers for energy, tempo, valence, danceability, and acousticness. The list is small. Some genres appear only once or twice. There are no lyrics and no real audio files.
 
 ---
 
-## 7. Evaluation  
+## Algorithm Summary
 
-Tested four CLI profiles: **High-Energy Pop** (Sunrise City first), **Chill Lofi** (tie at top between two lofi/chill tracks), **Deep Intense Rock** (Storm Runner first), and an **edge-case** pop + melancholic + high energy profile (Gym Hero edges Sunrise City; Cathedral Light appears third for mood match but low energy). Surprised that the lofi profile had a perfect tie at rank 1—scores only reflect stored features, not diversity. Ran **`RECOMMENDER_EXPERIMENT=1`**: genre lines show `+1.0` and energy contributions grow, so ordering changes without new data. Unit tests in `tests/test_recommender.py` lock basic ranking and explain behavior.
-
----
-
-## 8. Future Work  
-
-Add valence/tempo terms, tie-breakers, or a diversity penalty so top-5 is not repetitive.
+You get points if the song’s **genre** matches what the user asked for. You get points if the **mood** matches. You get points if the song’s **energy** is close to the user’s target energy (closer is better, not just “higher energy”). You get a small bonus if the song’s **acousticness** fits whether the user said they like acoustic sounds. Everything adds up to one score per song. The highest scores float to the top. Valence, tempo, and danceability are in the file but **not** used in the score yet.
 
 ---
 
-## 9. Personal Reflection  
+## Observed Behavior / Biases
 
-A short transparent score is easy to debug but can feel wrong when the user’s intent is contradictory—then the model is “doing the math” while the real goal is subjective.
+**Genre** counts more than **mood** in the default setup. So if someone asks for a sad mood but a happy genre, pop songs can still win because of genre and energy. A few high-energy tracks show up for many different users because energy and acoustic bonuses repeat. The catalog is uneven: some styles have more rows than others.
+
+---
+
+## Evaluation Process
+
+I ran **four taste profiles** in the CLI (high-energy pop, chill lofi, intense rock, and a weird “pop + melancholic + high energy” mix). I compared the top five for each. I turned on **`RECOMMENDER_EXPERIMENT=1`** once to see if halving genre weight and doubling energy weight changed the order. I also ran the **unit tests** in `tests/test_recommender.py` to check basic ranking and explanations.
+
+---
+
+## Intended Use and Non-Intended Use
+
+**Intended:** Learning how recommenders turn labels and numbers into an ordered list. Demos in class. Debugging a transparent score.
+
+**Not intended:** Real product recommendations, fair representation of all music styles, or understanding what you “should” listen to. It should not be used to judge artists or to make decisions that affect people outside a school project.
+
+---
+
+## Ideas for Improvement
+
+1. Add **valence** or **tempo** to the score so “sad” vs “happy” and speed matter more.
+2. Add a **diversity** rule so the top five are not all the same vibe.
+3. **Bigger or better-balanced data** so one genre does not crowd the list by accident.
+
+---
+
+## Personal Reflection
+
+**Biggest learning moment:** Seeing that a clear formula can still feel “wrong” when a person’s taste is messy or contradictory. The code did exactly what we wrote; the hard part was deciding if that matched real listening.
+
+**AI tools:** They sped up boilerplate and helped me think through edge cases. I still had to **run the program**, **read the CSV**, and **check the math** (weights, ties, and which columns actually affect the score). If I skipped that, bugs would hide in “reasonable-sounding” text.
+
+**Surprise:** A few if-statements and additions can still produce an ordered list that *feels* like a recommendation app, even though there is no machine learning. The illusion breaks when you read the reasons line by line.
+
+**What I’d try next:** Feed in **play history** or **skip** data, or add a second pass that picks diverse artists so the top list is not repetitive.
