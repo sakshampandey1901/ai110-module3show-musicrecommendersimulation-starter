@@ -2,110 +2,52 @@
 
 ## 1. Model Name  
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
+**CatalogRank 0.1** — content-based scoring over `data/songs.csv`.
 
 ---
 
 ## 2. Intended Use  
 
-Describe what your recommender is designed to do and who it is for. 
-
-Prompts:  
-
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+Ranks up to five songs from a fixed classroom catalog given a small preference dict (genre, mood, target energy, acoustic taste). For exploration only; not trained on real listening data.
 
 ---
 
 ## 3. How the Model Works  
 
-Explain your scoring approach in simple language.  
-
-Prompts:  
-
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
-
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+Each song is scored by adding points for genre match, mood match, energy closeness to the user’s target, and a binary acoustic “fit.” The catalog is sorted by total score; unused columns (valence, tempo, danceability) are not in the score. Optional **`RECOMMENDER_EXPERIMENT=1`** halves genre weight and doubles the energy multiplier to test sensitivity.
 
 ---
 
 ## 4. Data  
 
-Describe the dataset the model uses.  
-
-Prompts:  
-
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+18 rows in `data/songs.csv`: multiple genres and moods; rock and metal are sparse (one rock track). No lyrics or audio waveforms.
 
 ---
 
 ## 5. Strengths  
 
-Where does your system seem to work well  
-
-Prompts:  
-
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+Transparent reasons (e.g. `genre match (+2.0)`). Different profiles (pop vs lofi vs rock) yield different #1 tracks when the catalog contains a clear genre/mood fit (e.g. Storm Runner for “Deep Intense Rock”).
 
 ---
 
 ## 6. Limitations and Bias 
 
-Where the system struggles or behaves unfairly. 
-
-Prompts:  
-
-- Features it does not consider  
-- Genres or moods that are underrepresented  
-- Cases where the system overfits to one preference  
-- Ways the scoring might unintentionally favor some users  
+Genre is worth twice as much as mood, so a user who wants a contradictory mood can still see top results dominated by genre matches (e.g. pop + melancholic edge case: Gym Hero and Sunrise City stay on top because of `pop` and high energy, not because the mood fits). The energy term is `1 − |Δenergy|`; it does not model “wrong mood” as a hard penalty. The catalog is tiny, so the same high-energy electronic or hip-hop tracks can float near the top for many profiles on energy + acoustic alone. Valence and tempo are ignored, which can hide emotionally “sad” or “slow” tracks that match a melancholic user.
 
 ---
 
 ## 7. Evaluation  
 
-How you checked whether the recommender behaved as expected. 
-
-Prompts:  
-
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
-
-No need for numeric metrics unless you created some.
+Tested four CLI profiles: **High-Energy Pop** (Sunrise City first), **Chill Lofi** (tie at top between two lofi/chill tracks), **Deep Intense Rock** (Storm Runner first), and an **edge-case** pop + melancholic + high energy profile (Gym Hero edges Sunrise City; Cathedral Light appears third for mood match but low energy). Surprised that the lofi profile had a perfect tie at rank 1—scores only reflect stored features, not diversity. Ran **`RECOMMENDER_EXPERIMENT=1`**: genre lines show `+1.0` and energy contributions grow, so ordering changes without new data. Unit tests in `tests/test_recommender.py` lock basic ranking and explain behavior.
 
 ---
 
 ## 8. Future Work  
 
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+Add valence/tempo terms, tie-breakers, or a diversity penalty so top-5 is not repetitive.
 
 ---
 
 ## 9. Personal Reflection  
 
-A few sentences about your experience.  
-
-Prompts:  
-
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+A short transparent score is easy to debug but can feel wrong when the user’s intent is contradictory—then the model is “doing the math” while the real goal is subjective.

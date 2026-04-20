@@ -1,4 +1,5 @@
 import csv
+import os
 from pathlib import Path
 from typing import List, Dict, Tuple, Any
 
@@ -8,6 +9,23 @@ GENRE_MATCH_POINTS = 2.0
 MOOD_MATCH_POINTS = 1.0
 ENERGY_WEIGHT = 0.5
 ACOUSTIC_MATCH_POINTS = 0.5
+
+
+def _scoring_weights() -> Dict[str, float]:
+    """Baseline weights; set RECOMMENDER_EXPERIMENT=1 for half genre / double energy contribution."""
+    if os.environ.get("RECOMMENDER_EXPERIMENT", "").strip().lower() in ("1", "true", "yes"):
+        return {
+            "genre": GENRE_MATCH_POINTS / 2,
+            "mood": MOOD_MATCH_POINTS,
+            "energy": ENERGY_WEIGHT * 2,
+            "acoustic": ACOUSTIC_MATCH_POINTS,
+        }
+    return {
+        "genre": GENRE_MATCH_POINTS,
+        "mood": MOOD_MATCH_POINTS,
+        "energy": ENERGY_WEIGHT,
+        "acoustic": ACOUSTIC_MATCH_POINTS,
+    }
 
 
 @dataclass
@@ -107,31 +125,32 @@ def _normalize_prefs(user_prefs: Dict[str, Any]) -> Dict[str, Any]:
 
 def _score_from_prefs(prefs: Dict[str, Any], song: Dict[str, Any]) -> Tuple[float, List[str]]:
     p = _normalize_prefs(prefs)
+    w = _scoring_weights()
     reasons: List[str] = []
     score = 0.0
 
     if song["genre"].lower() == p["genre"].lower():
-        score += GENRE_MATCH_POINTS
-        reasons.append(f"genre match (+{GENRE_MATCH_POINTS:.1f})")
+        score += w["genre"]
+        reasons.append(f"genre match (+{w['genre']:.1f})")
 
     if song["mood"].lower() == p["mood"].lower():
-        score += MOOD_MATCH_POINTS
-        reasons.append(f"mood match (+{MOOD_MATCH_POINTS:.1f})")
+        score += w["mood"]
+        reasons.append(f"mood match (+{w['mood']:.1f})")
 
     e = float(song["energy"])
     energy_sim = 1.0 - abs(e - p["energy"])
-    energy_pts = ENERGY_WEIGHT * energy_sim
+    energy_pts = w["energy"] * energy_sim
     score += energy_pts
     reasons.append(f"energy similarity (+{energy_pts:.2f})")
 
     ac = float(song["acousticness"])
     wants_acoustic = p["likes_acoustic"]
     if wants_acoustic and ac >= 0.5:
-        score += ACOUSTIC_MATCH_POINTS
-        reasons.append(f"acoustic preference (+{ACOUSTIC_MATCH_POINTS:.1f})")
+        score += w["acoustic"]
+        reasons.append(f"acoustic preference (+{w['acoustic']:.1f})")
     elif not wants_acoustic and ac < 0.5:
-        score += ACOUSTIC_MATCH_POINTS
-        reasons.append(f"acoustic preference (+{ACOUSTIC_MATCH_POINTS:.1f})")
+        score += w["acoustic"]
+        reasons.append(f"acoustic preference (+{w['acoustic']:.1f})")
     else:
         reasons.append("acoustic taste mismatch (+0.0)")
 

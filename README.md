@@ -12,31 +12,116 @@ CLI-first simulation: `python -m src.main` loads `data/songs.csv`, scores each t
 
 **`UserProfile` / CLI dict:** `genre` (or `favorite_genre`), `mood` (or `favorite_mood`), `energy` (or `target_energy`), `likes_acoustic`.
 
-**Scoring:** +2.0 genre, +1.0 mood, `0.5 × (1 − |energy − target|)`, +0.5 when acoustic taste matches (`likes_acoustic` vs `acousticness` threshold 0.5). Reasons include the points awarded for each rule.
+**Scoring:** +2.0 genre, +1.0 mood, `0.5 × (1 − |energy − target|)`, +0.5 when acoustic taste matches (`likes_acoustic` vs `acousticness` threshold 0.5). Reasons include the points awarded for each rule. Optional **`RECOMMENDER_EXPERIMENT=1`**: genre weight halved and energy multiplier doubled (same formula, different weights) to test sensitivity.
 
 **Ranking:** `recommend_songs` builds `(song, score, reasons)` for the whole catalog, then uses **`sorted(..., key=..., reverse=True)`** so the original list is not mutated. **`list.sort()`** sorts in place and returns `None`; **`sorted()`** returns a new list—here we prefer `sorted()` on a small list of tuples to leave `songs` unchanged.
 
 ---
 
-## CLI sample output
-
-Run from the project root:
+## CLI output (multi-profile)
 
 ```bash
 python3 -m src.main
 ```
 
-Example (default pop / happy profile). You can paste a terminal screenshot here for coursework if an image is required.
+`main.py` runs four profiles (high-energy pop, chill lofi, deep intense rock, and an edge-case mix). For grading you can attach terminal screenshots of this run; the transcript below matches `python3 -m src.main` on the current catalog.
 
 ```
 Loaded songs: 18
+Scoring: baseline
 
-Top recommendations (pop / happy / energy 0.8)
-====================================================
+Profile: High-Energy Pop
+========================================================
 
 1. Sunrise City
    Artist: Neon Echo
-   Score:  3.99
+   Score:  3.95
+   Reasons:
+     • genre match (+2.0)
+     • mood match (+1.0)
+     • energy similarity (+0.45)
+     • acoustic preference (+0.5)
+
+2. Gym Hero
+   Artist: Max Pulse
+   Score:  3.00
+   Reasons:
+     • genre match (+2.0)
+     • energy similarity (+0.49)
+     • acoustic preference (+0.5)
+
+3. Rooftop Lights
+   Artist: Indigo Parade
+   Score:  1.92
+   Reasons:
+     • mood match (+1.0)
+     • energy similarity (+0.42)
+     • acoustic preference (+0.5)
+
+4. Storm Runner
+   Artist: Voltline
+   Score:  0.99
+   Reasons:
+     • energy similarity (+0.49)
+     • acoustic preference (+0.5)
+
+5. Concrete Echoes
+   Artist: Kairo Keys
+   Score:  0.98
+   Reasons:
+     • energy similarity (+0.48)
+     • acoustic preference (+0.5)
+
+Profile: Chill Lofi
+========================================================
+
+1. Library Rain
+   Artist: Paper Lanterns
+   Score:  3.98
+   Reasons:
+     • genre match (+2.0)
+     • mood match (+1.0)
+     • energy similarity (+0.48)
+     • acoustic preference (+0.5)
+
+2. Midnight Coding
+   Artist: LoRoom
+   Score:  3.98
+   Reasons:
+     • genre match (+2.0)
+     • mood match (+1.0)
+     • energy similarity (+0.48)
+     • acoustic preference (+0.5)
+
+3. Focus Flow
+   Artist: LoRoom
+   Score:  2.99
+   Reasons:
+     • genre match (+2.0)
+     • energy similarity (+0.49)
+     • acoustic preference (+0.5)
+
+4. Spacewalk Thoughts
+   Artist: Orbit Bloom
+   Score:  1.95
+   Reasons:
+     • mood match (+1.0)
+     • energy similarity (+0.45)
+     • acoustic preference (+0.5)
+
+5. Coffee Shop Stories
+   Artist: Slow Stereo
+   Score:  0.99
+   Reasons:
+     • energy similarity (+0.49)
+     • acoustic preference (+0.5)
+
+Profile: Deep Intense Rock
+========================================================
+
+1. Storm Runner
+   Artist: Voltline
+   Score:  4.00
    Reasons:
      • genre match (+2.0)
      • mood match (+1.0)
@@ -45,34 +130,76 @@ Top recommendations (pop / happy / energy 0.8)
 
 2. Gym Hero
    Artist: Max Pulse
-   Score:  2.94
-   Reasons:
-     • genre match (+2.0)
-     • energy similarity (+0.43)
-     • acoustic preference (+0.5)
-
-3. Rooftop Lights
-   Artist: Indigo Parade
    Score:  1.98
    Reasons:
      • mood match (+1.0)
      • energy similarity (+0.48)
      • acoustic preference (+0.5)
 
-4. Night Drive Loop
-   Artist: Neon Echo
+3. Concrete Echoes
+   Artist: Kairo Keys
+   Score:  0.99
+   Reasons:
+     • energy similarity (+0.49)
+     • acoustic preference (+0.5)
+
+4. Pulse Grid
+   Artist: Neon Foundry
+   Score:  0.98
+   Reasons:
+     • energy similarity (+0.48)
+     • acoustic preference (+0.5)
+
+5. Furnace Heart
+   Artist: Black Anvil
    Score:  0.97
    Reasons:
      • energy similarity (+0.47)
      • acoustic preference (+0.5)
 
-5. Pulse Grid
-   Artist: Neon Foundry
-   Score:  0.97
+Profile: Edge case: upbeat genre + melancholic mood + high energy
+========================================================
+
+1. Gym Hero
+   Artist: Max Pulse
+   Score:  2.98
    Reasons:
+     • genre match (+2.0)
      • energy similarity (+0.47)
      • acoustic preference (+0.5)
+
+2. Sunrise City
+   Artist: Neon Echo
+   Score:  2.97
+   Reasons:
+     • genre match (+2.0)
+     • energy similarity (+0.47)
+     • acoustic preference (+0.5)
+
+3. Cathedral Light
+   Artist: String Theory
+   Score:  1.17
+   Reasons:
+     • mood match (+1.0)
+     • energy similarity (+0.17)
+     • acoustic taste mismatch (+0.0)
+
+4. Concrete Echoes
+   Artist: Kairo Keys
+   Score:  1.00
+   Reasons:
+     • energy similarity (+0.50)
+     • acoustic preference (+0.5)
+
+5. Pulse Grid
+   Artist: Neon Foundry
+   Score:  0.99
+   Reasons:
+     • energy similarity (+0.49)
+     • acoustic preference (+0.5)
 ```
+
+**Weight experiment:** `RECOMMENDER_EXPERIMENT=1 python3 -m src.main` — same profiles; genre matches show `+1.0` and energy terms roughly double, so rankings shift toward energy proximity when genre is weaker.
 
 ---
 
@@ -113,11 +240,8 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
-
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+- **Weight shift:** `RECOMMENDER_EXPERIMENT=1` halves genre points and doubles the energy multiplier; top lists reorder (often more weight on energy closeness).
+- **Profiles:** See `reflection.md` for pairwise comparisons.
 
 ---
 
