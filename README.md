@@ -2,32 +2,77 @@
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
-
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
+CLI-first simulation: `python -m src.main` loads `data/songs.csv`, scores each track against a preference dict, prints **Loaded songs: N**, then the top *k* rows with numeric scores and per-rule reasons (e.g. `genre match (+2.0)`). The same scoring rules power the `Recommender` class used in unit tests.
 
 ---
 
 ## How The System Works
 
-In real apps, recommenders blend many signals—what you played, skipped, liked, and what similar users enjoy—often learned by models we never see. This simulation is **content-based**: it only compares each song’s described attributes to a **UserProfile** you define, then ranks the catalog by a transparent score. This version prioritizes **interpretability** (you can explain *why* a song ranked high) and **vibe alignment** through genre, mood, and continuous audio-style features (energy, valence, tempo, danceability, acousticness) rather than collaborative “people like you also liked” patterns.
+**`Song` columns:** `id`, `title`, `artist`, `genre`, `mood`, `energy`, `tempo_bpm`, `valence`, `danceability`, `acousticness`.
 
-**`Song` features (from `data/songs.csv`, one row per track):** `id`, `title`, `artist`, `genre`, `mood`, `energy`, `tempo_bpm`, `valence`, `danceability`, `acousticness`.
+**`UserProfile` / CLI dict:** `genre` (or `favorite_genre`), `mood` (or `favorite_mood`), `energy` (or `target_energy`), `likes_acoustic`.
 
-**`UserProfile` fields (simulated taste):** `favorite_genre`, `favorite_mood`, `target_energy`, `likes_acoustic` — plus optional targets or tolerances you derive for tempo/valence/danceability when you implement scoring.
+**Scoring:** +2.0 genre, +1.0 mood, `0.5 × (1 − |energy − target|)`, +0.5 when acoustic taste matches (`likes_acoustic` vs `acousticness` threshold 0.5). Reasons include the points awarded for each rule.
 
-**Scoring vs ranking:** A **scoring rule** assigns one number per song (how well it matches the profile). A **ranking rule** orders the whole list by those scores (and tie-breaks or top‑`k` selection). You need both because the score answers “how good is this match?” while ranking answers “which songs should we show first?”
+**Ranking:** `recommend_songs` builds `(song, score, reasons)` for the whole catalog, then uses **`sorted(..., key=..., reverse=True)`** so the original list is not mutated. **`list.sort()`** sorts in place and returns `None`; **`sorted()`** returns a new list—here we prefer `sorted()` on a small list of tuples to leave `songs` unchanged.
 
-**Numerical features (e.g. energy):** Prefer **closeness** to the user’s target, not “higher is better.” For example, reward \(1 - |energy_{song} - energy_{user}|\) (or a squared penalty) so a user who wants medium energy is not pushed toward max energy tracks.
+---
 
-**Weights (genre vs mood):** Genre often acts as a **broad filter** (library of styles); mood captures **session intent** (chill vs intense). Many designs weight genre slightly higher so recommendations stay stylistically coherent, and mood to tune the feel—but your weights should reflect what you care about (e.g. mood-first for “soundtrack my study session” vs genre-first for “only indie pop”).
+## CLI sample output
+
+Run from the project root:
+
+```bash
+python3 -m src.main
+```
+
+Example (default pop / happy profile). You can paste a terminal screenshot here for coursework if an image is required.
+
+```
+Loaded songs: 18
+
+Top recommendations (pop / happy / energy 0.8)
+====================================================
+
+1. Sunrise City
+   Artist: Neon Echo
+   Score:  3.99
+   Reasons:
+     • genre match (+2.0)
+     • mood match (+1.0)
+     • energy similarity (+0.49)
+     • acoustic preference (+0.5)
+
+2. Gym Hero
+   Artist: Max Pulse
+   Score:  2.94
+   Reasons:
+     • genre match (+2.0)
+     • energy similarity (+0.43)
+     • acoustic preference (+0.5)
+
+3. Rooftop Lights
+   Artist: Indigo Parade
+   Score:  1.98
+   Reasons:
+     • mood match (+1.0)
+     • energy similarity (+0.48)
+     • acoustic preference (+0.5)
+
+4. Night Drive Loop
+   Artist: Neon Echo
+   Score:  0.97
+   Reasons:
+     • energy similarity (+0.47)
+     • acoustic preference (+0.5)
+
+5. Pulse Grid
+   Artist: Neon Foundry
+   Score:  0.97
+   Reasons:
+     • energy similarity (+0.47)
+     • acoustic preference (+0.5)
+```
 
 ---
 
